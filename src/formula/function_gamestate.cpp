@@ -258,6 +258,36 @@ private:
 	}
 };
 
+
+class enemy_of_function : public function_expression
+{
+public:
+	enemy_of_function(const args_list& args)
+		: function_expression("enemy_of", args, 2, 2)
+	{}
+private:
+	variant execute(const formula_callable& variables, formula_debugger *fdb) const
+	{
+		variant self_v = args()[0]->evaluate(variables, add_debug_info(fdb, 0, "enemy_of:self"));
+		variant other_v = args()[1]->evaluate(variables, add_debug_info(fdb, 1, "enemy_of:other"));
+		int self, other;
+
+		if(auto uc = self_v.try_convert<unit_callable>()) {
+			self = uc->get_value("side").as_int();
+		} else {
+			self = self_v.as_int();
+		}
+
+		if(auto uc = other_v.try_convert<unit_callable>()) {
+			other = uc->get_value("side").as_int();
+		} else {
+			other = other_v.as_int();
+		}
+
+		return variant(resources::gameboard->get_team(self).is_enemy(other) ? 1 : 0);
+	}
+};
+
 } // namespace gamestate
 
 gamestate_function_symbol_table::gamestate_function_symbol_table(std::shared_ptr<function_symbol_table> parent) : function_symbol_table(parent) {
@@ -270,6 +300,7 @@ gamestate_function_symbol_table::gamestate_function_symbol_table(std::shared_ptr
 	DECLARE_WFL_FUNCTION(movement_cost);
 	DECLARE_WFL_FUNCTION(adjacent_locs); // This is deliberately duplicated here; this form excludes off-map locations, while the core form does not
 	DECLARE_WFL_FUNCTION(locations_in_radius);
+	DECLARE_WFL_FUNCTION(enemy_of);
 }
 
 }
